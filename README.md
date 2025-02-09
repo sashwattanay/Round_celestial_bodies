@@ -1,2 +1,2 @@
 # round_celestial_bodies
-Mathematica code to underdstand why planets and stars are spherical in shape
+Mathematica code to understand why planets and stars are spherical in shape
