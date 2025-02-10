@@ -1,0 +1,733 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     30437,        725]
+NotebookOptionsPosition[     29928,        707]
+NotebookOutlinePosition[     30345,        724]
+CellTagsIndexPosition[     30302,        721]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", "Parameters", "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"numParticles", "=", "200"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{"Number", " ", "of", " ", "particles"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"horizontalSize", "=", "300"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Horizontal", " ", "expanse", " ", "of", " ", "the", " ", "space"}], 
+    "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"verticalSize", "=", "horizontalSize"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{"Vertical", " ", "expanse", " ", "of", " ", "the", " ", "space"}],
+     "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"particleRadius", "=", "4."}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Radius", " ", "of", " ", "the", " ", "particles", " ", "for", " ", 
+     "display"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"minDistance", "=", 
+     RowBox[{"2", "*", "particleRadius"}]}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{"Minimum", " ", "distance", " ", "between", " ", "particles"}], 
+    "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"initialMoveDistance", "=", "20"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{"Initial", " ", "movement", " ", "distance"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"epochInterval", "=", "100"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Interval", " ", "after", " ", "which", " ", "move", " ", "distance", " ",
+      "decreases"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"distanceDropFactor", "=", "1.01"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Factor", " ", "by", " ", "which", " ", "move", " ", "distance", " ", 
+     "decreases"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"lowerBoundMoveDistance", "=", "particleRadius"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Adjustable", " ", "lower", " ", "bound", " ", "for", " ", "move", " ", 
+     "distance"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"distanceIncreaseProbability", "=", "0.1"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Probability", " ", "for", " ", "accepting", " ", "moves", " ", "with", 
+     " ", "increased", " ", "distance"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"displayUpdateInterval", "=", "0.001"}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"Animation", " ", 
+      RowBox[{"speed", ":", "Smaller"}]}], "->", 
+     RowBox[{"faster", " ", "updates"}]}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"maxEpochs", "=", 
+     RowBox[{"10", "^", "8"}]}], ";"}], "  ", 
+   RowBox[{"(*", 
+    RowBox[{"Total", " ", "epochs", " ", "before", " ", "stopping"}], "*)"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Initialize", " ", "particles", " ", "with", " ", "positions", " ", 
+     "ensuring", " ", "minimum", " ", "distance"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"initializeParticles", "[", 
+      RowBox[{
+      "numParticles_", ",", "minDistance_", ",", "hSize_", ",", "vSize_"}], 
+      "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"positions", "=", 
+          RowBox[{"{", "}"}]}], ",", "candidate", ",", "isValid"}], "}"}], 
+       ",", 
+       RowBox[{
+        RowBox[{"While", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Length", "[", "positions", "]"}], "<", "numParticles"}], 
+          ",", 
+          RowBox[{
+           RowBox[{"candidate", "=", 
+            RowBox[{
+             RowBox[{"RandomReal", "[", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "hSize"}], "}"}], ",", "1"}], "]"}], "~", 
+             "Join", "~", 
+             RowBox[{"RandomReal", "[", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{"0", ",", "vSize"}], "}"}], ",", "1"}], "]"}]}]}], 
+           ";", 
+           RowBox[{"(*", 
+            RowBox[{"Random", " ", "position", " ", "within", " ", "bounds"}],
+             "*)"}], 
+           RowBox[{"(*", 
+            RowBox[{
+            "Check", " ", "if", " ", "the", " ", "candidate", " ", 
+             "satisfies", " ", "the", " ", "minimum", " ", "distance", " ", 
+             "condition"}], "*)"}], 
+           RowBox[{"isValid", "=", 
+            RowBox[{"AllTrue", "[", 
+             RowBox[{"positions", ",", 
+              RowBox[{
+               RowBox[{
+                RowBox[{
+                 RowBox[{
+                  RowBox[{"(", 
+                   RowBox[{
+                    RowBox[{"#", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "-", 
+                    RowBox[{"candidate", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}]}], ")"}], "^", "2"}], "+", 
+                 
+                 RowBox[{
+                  RowBox[{"(", 
+                   RowBox[{
+                    RowBox[{"#", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "-", 
+                    RowBox[{"candidate", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}]}], ")"}], "^", "2"}]}], ">=", 
+                RowBox[{"minDistance", "^", "2"}]}], "&"}]}], "]"}]}], ";", 
+           "\[IndentingNewLine]", 
+           RowBox[{"If", "[", 
+            RowBox[{"isValid", ",", 
+             RowBox[{"AppendTo", "[", 
+              RowBox[{"positions", ",", "candidate"}], "]"}]}], "]"}], 
+           ";"}]}], "]"}], ";", "\[IndentingNewLine]", "positions"}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "compute", " ", "cumulative", " ", "squared", 
+     " ", "distance"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"totalSquaredDistance", "[", "positions_", "]"}], ":=", 
+     RowBox[{"Total", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "1"}], "]"}], "]"}], "-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"2", ",", "1"}], "]"}], "]"}]}], ")"}], "^", "2"}], "+", 
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}], "-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"2", ",", "2"}], "]"}], "]"}]}], ")"}], "^", "2"}]}], 
+        "&"}], "/@", 
+       RowBox[{"Subsets", "[", 
+        RowBox[{"positions", ",", 
+         RowBox[{"{", "2", "}"}]}], "]"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "check", " ", "if", " ", "any", " ", 
+     "particle", " ", "is", " ", "too", " ", "close"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"tooClose", "[", 
+      RowBox[{"particle_", ",", "others_", ",", "minDistance_"}], "]"}], ":=", 
+     RowBox[{"AnyTrue", "[", 
+      RowBox[{"others", ",", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"#", "[", 
+              RowBox[{"[", "1", "]"}], "]"}], "-", 
+             RowBox[{"particle", "[", 
+              RowBox[{"[", "1", "]"}], "]"}]}], ")"}], "^", "2"}], "+", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"#", "[", 
+              RowBox[{"[", "2", "]"}], "]"}], "-", 
+             RowBox[{"particle", "[", 
+              RowBox[{"[", "2", "]"}], "]"}]}], ")"}], "^", "2"}]}], "<", 
+         RowBox[{"minDistance", "^", "2"}]}], "&"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "attempt", " ", "moving", " ", "one", " ", 
+     "particle"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"moveParticle", "[", 
+      RowBox[{
+      "particles_", ",", "moveDistance_", ",", "minDistance_", ",", 
+       "currentIndex_", ",", "currentAngle_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+        "proposedPosition", ",", "currentDistance", ",", "newDistance", ",", 
+         RowBox[{"validMove", "=", "False"}], ",", 
+         RowBox[{"newParticles", "=", "particles"}]}], "}"}], ",", 
+       RowBox[{"(*", 
+        RowBox[{
+        "Compute", " ", "the", " ", "proposed", " ", "new", " ", "position"}],
+         "*)"}], 
+       RowBox[{
+        RowBox[{"proposedPosition", "=", 
+         RowBox[{
+          RowBox[{"particles", "[", 
+           RowBox[{"[", "currentIndex", "]"}], "]"}], "+", 
+          RowBox[{"moveDistance", "*", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"Cos", "[", 
+              RowBox[{"currentAngle", " ", "Degree"}], "]"}], ",", 
+             RowBox[{"Sin", "[", 
+              RowBox[{"currentAngle", " ", "Degree"}], "]"}]}], "}"}]}]}]}], 
+        ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Compute", " ", "cumulative", " ", "squared", " ", "distances", " ", 
+          "for", " ", "current", " ", "and", " ", "proposed", " ", 
+          "positions"}], "*)"}], 
+        RowBox[{"currentDistance", "=", 
+         RowBox[{"totalSquaredDistance", "[", "particles", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"newParticles", "[", 
+          RowBox[{"[", "currentIndex", "]"}], "]"}], "=", 
+         "proposedPosition"}], ";", 
+        RowBox[{"(*", 
+         RowBox[{"Temporarily", " ", "move"}], "*)"}], 
+        RowBox[{"newDistance", "=", 
+         RowBox[{"totalSquaredDistance", "[", "newParticles", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Check", " ", "if", " ", "the", " ", "move", " ", "is", " ", 
+          "valid"}], "*)"}], 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"!", 
+           RowBox[{"tooClose", "[", 
+            RowBox[{"proposedPosition", ",", 
+             RowBox[{"Delete", "[", 
+              RowBox[{"newParticles", ",", "currentIndex"}], "]"}], ",", 
+             "minDistance"}], "]"}]}], ",", 
+          RowBox[{"(*", 
+           RowBox[{
+           "Ensure", " ", "distance", " ", "constraints", " ", "are", " ", 
+            "satisfied"}], "*)"}], 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"newDistance", "<=", "currentDistance"}], "||", 
+             RowBox[{
+              RowBox[{"RandomReal", "[", "]"}], "<=", 
+              "distanceIncreaseProbability"}]}], ",", 
+            RowBox[{"(*", 
+             RowBox[{
+             "Check", " ", "cumulative", " ", "distance", " ", "criterion", 
+              " ", "with", " ", "probability"}], "*)"}], 
+            RowBox[{"validMove", "=", "True"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{
+             "Accept", " ", "the", " ", "move", " ", "if", " ", "conditions", 
+              " ", "met"}], "*)"}], 
+            RowBox[{"newParticles", "=", "particles"}]}], "]"}], ",", 
+          RowBox[{"(*", 
+           RowBox[{
+           "Revert", " ", "the", " ", "temporary", " ", "move", " ", "if", 
+            " ", "invalid", " ", "cumulative", " ", "distance"}], "*)"}], 
+          RowBox[{"newParticles", "=", "particles"}]}], "]"}], ";", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Revert", " ", "the", " ", "temporary", " ", "move", " ", "if", " ", 
+          "any", " ", "distance", " ", "criterion", " ", "fails"}], "*)"}], 
+        RowBox[{"{", 
+         RowBox[{"newParticles", ",", "validMove"}], "}"}]}]}], "  ", 
+      RowBox[{"(*", 
+       RowBox[{
+       "Return", " ", "updated", " ", "particles", " ", "and", " ", "whether",
+         " ", "the", " ", "move", " ", "succeeded"}], "*)"}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "draw", " ", "the", " ", "particles"}], 
+    "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"drawParticles", "[", 
+      RowBox[{
+      "positions_", ",", "hSize_", ",", "vSize_", ",", "particleRadius_"}], 
+      "]"}], ":=", 
+     RowBox[{"Graphics", "[", 
+      RowBox[{
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{"Red", ",", 
+           RowBox[{"Disk", "[", 
+            RowBox[{"pos", ",", "particleRadius"}], "]"}]}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"pos", ",", "positions"}], "}"}]}], "]"}], ",", 
+       RowBox[{"PlotRange", "->", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "1"}], ",", 
+            RowBox[{"hSize", "+", "1"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "1"}], ",", 
+            RowBox[{"vSize", "+", "1"}]}], "}"}]}], "}"}]}], ",", 
+       RowBox[{"(*", 
+        RowBox[{
+        "Adjust", " ", "plot", " ", "range", " ", "for", " ", "visibility"}], 
+        "*)"}], 
+       RowBox[{"Axes", "->", "True"}], ",", 
+       RowBox[{"AxesOrigin", "->", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0"}], "}"}]}], ",", 
+       RowBox[{"AxesStyle", "->", "LightGray"}], ",", 
+       RowBox[{"ImageSize", "->", "400"}], ",", 
+       RowBox[{"AspectRatio", "->", 
+        RowBox[{"vSize", "/", "hSize"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"Real", "-", 
+     RowBox[{
+     "time", " ", "automatic", " ", "evolution", " ", "with", " ", 
+      "cleanup"}]}], "*)"}], "\n", 
+   RowBox[{"DynamicModule", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"particles", ",", 
+       RowBox[{"epoch", "=", "0"}], ",", 
+       RowBox[{"finished", "=", "False"}], ",", 
+       RowBox[{"validMoves", "=", "0"}], ",", 
+       RowBox[{"invalidMoves", "=", "0"}], ",", 
+       RowBox[{"currentMoveDistance", "=", "initialMoveDistance"}], ",", 
+       "currentIndex", ",", "currentAngle"}], "}"}], ",", 
+     RowBox[{"(*", 
+      RowBox[{
+       RowBox[{"Step", " ", "1"}], ":", 
+       RowBox[{
+       "Initialize", " ", "particles", " ", "ensuring", " ", "minimum", " ", 
+        "distance"}]}], "*)"}], 
+     RowBox[{
+      RowBox[{"particles", "=", 
+       RowBox[{"initializeParticles", "[", 
+        RowBox[{
+        "numParticles", ",", "minDistance", ",", "horizontalSize", ",", 
+         "verticalSize"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"currentIndex", "=", 
+       RowBox[{"RandomInteger", "[", 
+        RowBox[{"{", 
+         RowBox[{"1", ",", "numParticles"}], "}"}], "]"}]}], ";", 
+      RowBox[{"(*", 
+       RowBox[{"Initial", " ", "random", " ", "particle"}], "*)"}], 
+      RowBox[{"currentAngle", "=", 
+       RowBox[{"RandomReal", "[", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "360"}], "}"}], "]"}]}], ";", 
+      RowBox[{"(*", 
+       RowBox[{"Initial", " ", "random", " ", "direction"}], "*)"}], 
+      RowBox[{"(*", 
+       RowBox[{
+        RowBox[{"Step", " ", "2"}], ":", 
+        RowBox[{
+        "Dynamic", " ", "loop", " ", "for", " ", "automatic", " ", 
+         "updates"}]}], "*)"}], 
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Dynamic", "[", 
+          RowBox[{
+           RowBox[{"Row", "[", 
+            RowBox[{"{", 
+             RowBox[{
+             "\"\<Epoch: \>\"", ",", "epoch", ",", "\"\< | Valid Moves: \>\"",
+               ",", "validMoves", ",", "\"\< | Invalid Moves: \>\"", ",", 
+              "invalidMoves", ",", "\"\< | Current Move Distance: \>\"", ",", 
+              
+              RowBox[{"NumberForm", "[", 
+               RowBox[{"currentMoveDistance", ",", 
+                RowBox[{"{", 
+                 RowBox[{"4", ",", "2"}], "}"}]}], "]"}], ",", 
+              "\"\< | Current Particle: \>\"", ",", "currentIndex", ",", 
+              "\"\< | Current Angle: \>\"", ",", 
+              RowBox[{"NumberForm", "[", 
+               RowBox[{"currentAngle", ",", 
+                RowBox[{"{", 
+                 RowBox[{"3", ",", "2"}], "}"}]}], "]"}]}], "}"}], "]"}], ",", 
+           RowBox[{"TrackedSymbols", ":>", 
+            RowBox[{"{", 
+             RowBox[{
+             "epoch", ",", "validMoves", ",", "invalidMoves", ",", 
+              "currentMoveDistance", ",", "currentIndex", ",", 
+              "currentAngle"}], "}"}]}]}], "]"}], ",", 
+         RowBox[{"Dynamic", "[", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"epoch", "<=", "maxEpochs"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{"Total", " ", "epochs", " ", "before", " ", "stopping"}],
+              "*)"}], 
+            RowBox[{"(*", 
+             RowBox[{"Animation", " ", "in", " ", "progress"}], "*)"}], 
+            RowBox[{"Refresh", "[", 
+             RowBox[{"(*", 
+              RowBox[{
+              "Adjust", " ", "move", " ", "distance", " ", "after", " ", 
+               "every", " ", "epochInterval"}], "*)"}], 
+             RowBox[{
+              RowBox[{
+               RowBox[{"If", "[", 
+                RowBox[{
+                 RowBox[{
+                  RowBox[{
+                   RowBox[{"Mod", "[", 
+                    RowBox[{"epoch", ",", "epochInterval"}], "]"}], "==", 
+                   "0"}], "&&", 
+                  RowBox[{"epoch", ">", "0"}]}], ",", 
+                 RowBox[{"currentMoveDistance", "=", 
+                  RowBox[{"Max", "[", 
+                   RowBox[{
+                    RowBox[{
+                    "currentMoveDistance", "/", "distanceDropFactor"}], ",", 
+                    "lowerBoundMoveDistance"}], "]"}]}]}], "]"}], ";", 
+               RowBox[{"(*", 
+                RowBox[{"Enforce", " ", "lower", " ", "bound"}], "*)"}], 
+               RowBox[{"(*", 
+                RowBox[{
+                "Attempt", " ", "to", " ", "move", " ", "a", " ", 
+                 "particle"}], "*)"}], 
+               RowBox[{"Module", "[", 
+                RowBox[{
+                 RowBox[{"{", "result", "}"}], ",", 
+                 RowBox[{
+                  RowBox[{"result", "=", 
+                   RowBox[{"moveParticle", "[", 
+                    RowBox[{
+                    "particles", ",", "currentMoveDistance", ",", 
+                    "minDistance", ",", "currentIndex", ",", "currentAngle"}],
+                     "]"}]}], ";", "\[IndentingNewLine]", 
+                  RowBox[{"particles", "=", 
+                   RowBox[{"result", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}]}], ";", 
+                  RowBox[{"(*", 
+                   RowBox[{"Update", " ", "particles"}], "*)"}], 
+                  RowBox[{"(*", 
+                   RowBox[{"Track", " ", "move", " ", 
+                    RowBox[{"success", "/", "failure"}]}], "*)"}], 
+                  RowBox[{"If", "[", 
+                   RowBox[{
+                    RowBox[{"result", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], ",", 
+                    RowBox[{"validMoves", "++"}], ",", 
+                    RowBox[{
+                    RowBox[{"invalidMoves", "++"}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"currentIndex", "=", 
+                    RowBox[{"RandomInteger", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "numParticles"}], "}"}], "]"}]}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"currentAngle", "=", 
+                    RowBox[{"RandomReal", "[", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "360"}], "}"}], "]"}]}]}]}], "  ", 
+                   RowBox[{"(*", 
+                    RowBox[{
+                    "New", " ", "angle", " ", "on", " ", "invalid", " ", 
+                    "move"}], "*)"}], "]"}], ";"}]}], "]"}], ";", 
+               "\[IndentingNewLine]", 
+               RowBox[{"(*", 
+                RowBox[{"Increment", " ", "epoch", " ", "counter"}], "*)"}], 
+               RowBox[{"epoch", "++"}], ";", "\[IndentingNewLine]", 
+               RowBox[{"(*", 
+                RowBox[{"Draw", " ", "the", " ", "particles"}], "*)"}], 
+               RowBox[{"drawParticles", "[", 
+                RowBox[{
+                "particles", ",", "horizontalSize", ",", "verticalSize", ",", 
+                 "particleRadius"}], "]"}]}], ",", 
+              RowBox[{"UpdateInterval", "->", "displayUpdateInterval"}]}], 
+             "]"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{
+             "Adjustable", " ", "parameter", " ", "for", " ", "update", " ", 
+              "frequency"}], "*)"}], 
+            RowBox[{"(*", 
+             RowBox[{"Animation", " ", 
+              RowBox[{"complete", ":", "Cleanup"}]}], "*)"}], 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{"!", "finished"}], ",", 
+              RowBox[{
+               RowBox[{"finished", "=", "True"}], ";", "\[IndentingNewLine]", 
+               
+               RowBox[{"Pause", "[", "1", "]"}], ";", 
+               RowBox[{"(*", 
+                RowBox[{
+                "Short", " ", "delay", " ", "before", " ", "quitting"}], 
+                "*)"}], 
+               RowBox[{
+               "Print", "[", 
+                "\"\<Simulation Complete. Quitting Kernel...\>\"", "]"}], ";",
+                "\[IndentingNewLine]", 
+               RowBox[{"ClearAll", "[", "\"\<Global`*\>\"", "]"}], ";", 
+               RowBox[{"(*", 
+                RowBox[{
+                "Clear", " ", "all", " ", "global", " ", "variables"}], 
+                "*)"}], 
+               RowBox[{
+               "FrontEndTokenExecute", "[", "\"\<QuitKernel\>\"", "]"}]}]}], 
+             "]"}]}], "]"}], "]"}]}], "}"}], "]"}]}]}], "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.944173859939275*^9, 3.9441738666374617`*^9}, {
+  3.94417390016385*^9, 3.94417390868934*^9}, {3.944174216950583*^9, 
+  3.9441742357423763`*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"35147b58-d8b3-4c01-8e09-10c576e60390"],
+
+Cell[BoxData[
+ DynamicModuleBox[{$CellContext`particles$$ = CompressedData["
+1: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
+TET2B3v8D4N1j9k=
+  "], $CellContext`epoch$$ = 326, $CellContext`finished$$ = 
+  False, $CellContext`validMoves$$ = 101, $CellContext`invalidMoves$$ = 
+  225, $CellContext`currentMoveDistance$$ = 
+  19.41180295855289, $CellContext`currentIndex$$ = 
+  158, $CellContext`currentAngle$$ = 216.08070833332147`}, 
+  TagBox[GridBox[{
+     {
+      DynamicBox[ToBoxes[
+        Row[{
+         "Epoch: ", $CellContext`epoch$$, 
+          " | Valid Moves: ", $CellContext`validMoves$$, 
+          " | Invalid Moves: ", $CellContext`invalidMoves$$, 
+          " | Current Move Distance: ", 
+          NumberForm[$CellContext`currentMoveDistance$$, {4, 2}], 
+          " | Current Particle: ", $CellContext`currentIndex$$, 
+          " | Current Angle: ", 
+          NumberForm[$CellContext`currentAngle$$, {3, 2}]}], StandardForm],
+       ImageSizeCache->{
+        517.253173828125, {55.50132751464844, 15.98989486694336}},
+       TrackedSymbols:>{$CellContext`epoch$$, $CellContext`validMoves$$, \
+$CellContext`invalidMoves$$, $CellContext`currentMoveDistance$$, \
+$CellContext`currentIndex$$, $CellContext`currentAngle$$}]},
+     {
+      DynamicBox[ToBoxes[
+        If[$CellContext`epoch$$ <= $CellContext`maxEpochs, 
+         Refresh[If[
+            And[
+            Mod[$CellContext`epoch$$, $CellContext`epochInterval] == 
+             0, $CellContext`epoch$$ > 0], $CellContext`currentMoveDistance$$ = 
+            Max[$CellContext`currentMoveDistance$$/$CellContext`\
+distanceDropFactor, $CellContext`lowerBoundMoveDistance]]; 
+          Module[{$CellContext`result$}, $CellContext`result$ = \
+$CellContext`moveParticle[$CellContext`particles$$, \
+$CellContext`currentMoveDistance$$, $CellContext`minDistance, \
+$CellContext`currentIndex$$, $CellContext`currentAngle$$]; \
+$CellContext`particles$$ = Part[$CellContext`result$, 1]; If[
+              Part[$CellContext`result$, 2], 
+              Increment[$CellContext`validMoves$$], 
+              Increment[$CellContext`invalidMoves$$]; \
+$CellContext`currentIndex$$ = 
+               RandomInteger[{
+                 1, $CellContext`numParticles}]; $CellContext`currentAngle$$ = 
+               RandomReal[{0, 360}]]; Null]; 
+          Increment[$CellContext`epoch$$]; \
+$CellContext`drawParticles[$CellContext`particles$$, \
+$CellContext`horizontalSize, $CellContext`verticalSize, \
+$CellContext`particleRadius], 
+          UpdateInterval -> $CellContext`displayUpdateInterval], 
+         If[
+          Not[$CellContext`finished$$], $CellContext`finished$$ = True; 
+          Pause[1]; Print["Simulation Complete. Quitting Kernel..."]; 
+          ClearAll["Global`*"]; FrontEndTokenExecute["QuitKernel"]]], 
+        StandardForm],
+       ImageSizeCache->{
+        660.8730224609375, {506.6899419128418, 17.9400634765625}}]}
+    },
+    DefaultBaseStyle->"Column",
+    GridBoxAlignment->{"Columns" -> {{Left}}},
+    GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+   "Column"],
+  DynamicModuleValues:>{}]], "Output",
+ CellChangeTimes->{3.94417386738872*^9, 3.944173912909649*^9, 
+  3.944174239552102*^9, 3.944668415220448*^9, 3.9476977331104403`*^9, 
+  3.947699151569158*^9},
+ CellLabel->"Out[18]=",ExpressionUUID->"aa631cdc-0ca7-4bf2-8a03-4d1c65ccb326"]
+}, Open  ]]
+},
+Evaluator->"2nd Kernel",
+WindowSize->{864, 1051},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+FrontEndVersion->"14.1 for Mac OS X ARM (64-bit) (July 16, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"a7946b08-f4fe-4aac-8d16-ec03dda64b20"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 21882, 545, 2998, "Input",ExpressionUUID->"35147b58-d8b3-4c01-8e09-10c576e60390"],
+Cell[22461, 569, 7451, 135, 623, "Output",ExpressionUUID->"aa631cdc-0ca7-4bf2-8a03-4d1c65ccb326"]
+}, Open  ]]
+}
+]
+*)
+

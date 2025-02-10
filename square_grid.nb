@@ -1,0 +1,576 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     22951,        568]
+NotebookOptionsPosition[     22468,        551]
+NotebookOutlinePosition[     22860,        567]
+CellTagsIndexPosition[     22817,        564]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"Chessboard", " ", "size"}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"boardSize", "=", "20"}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Number", " ", "of", " ", "particles"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"numParticles", "=", "100"}], ";"}], "\[IndentingNewLine]", "\n", 
+   
+   RowBox[{"(*", 
+    RowBox[{"Total", " ", "epochs", " ", "before", " ", "stopping"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"maxEpochs", "=", "20000"}], ";"}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Adjustable", " ", "parameter", " ", "for", " ", "update", " ", 
+     "frequency"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Change", " ", "displayUpdateInterval", " ", "to", " ", "adjust", " ", 
+     "animation", " ", "speed", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"smaller", " ", "value"}], "->", 
+        RowBox[{"faster", " ", "updates"}]}], ",", 
+       RowBox[{
+        RowBox[{"larger", " ", "value"}], "->", 
+        RowBox[{"slower", " ", "updates"}]}]}], ")"}]}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"displayUpdateInterval", "=", "0.001"}], ";"}], " ", 
+   RowBox[{"(*", 
+    RowBox[{"Default", ":", 
+     RowBox[{"0.01", " ", "seconds"}]}], "*)"}], "\[IndentingNewLine]", "\n", 
+   
+   RowBox[{"(*", 
+    RowBox[{
+    "Probability", " ", "of", " ", "allowing", " ", "a", " ", "move", " ", 
+     "when", " ", "the", " ", "distance", " ", "increases"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"distanceIncreaseProbability", "=", "0.0"}], ";"}], " ", 
+   RowBox[{"(*", 
+    RowBox[{"Default", ":", "0"}], "*)"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Initialize", " ", "particles", " ", "with", " ", "unique", " ", 
+     "positions"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"initializeParticles", "[", 
+      RowBox[{"numParticles_", ",", "boardSize_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"allPositions", ",", "selectedPositions"}], "}"}], ",", 
+       RowBox[{"(*", 
+        RowBox[{
+        "Generate", " ", "all", " ", "possible", " ", "positions", " ", "on", 
+         " ", "the", " ", "chessboard"}], "*)"}], 
+       RowBox[{
+        RowBox[{"allPositions", "=", 
+         RowBox[{"Flatten", "[", 
+          RowBox[{
+           RowBox[{"Table", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"x", ",", "y"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"x", ",", "1", ",", "boardSize"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"y", ",", "1", ",", "boardSize"}], "}"}]}], "]"}], ",", 
+           "1"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Randomly", " ", "select", " ", "numParticles", " ", "unique", " ", 
+          "positions"}], "*)"}], 
+        RowBox[{
+         RowBox[{"RandomSample", "[", 
+          RowBox[{"allPositions", ",", "numParticles"}], "]"}], "-", 
+         "1"}]}]}], " ", 
+      RowBox[{"(*", 
+       RowBox[{
+        RowBox[{"Adjust", " ", "to", " ", "0"}], "-", 
+        RowBox[{"based", " ", "indexing"}]}], "*)"}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "compute", " ", "cumulative", " ", "squared", 
+     " ", "distance"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"totalSquaredDistance", "[", "positions_", "]"}], ":=", 
+     RowBox[{"Total", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "1"}], "]"}], "]"}], "-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"2", ",", "1"}], "]"}], "]"}]}], ")"}], "^", "2"}], "+", 
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}], "-", 
+            RowBox[{"#", "[", 
+             RowBox[{"[", 
+              RowBox[{"2", ",", "2"}], "]"}], "]"}]}], ")"}], "^", "2"}]}], 
+        "&"}], "/@", 
+       RowBox[{"Subsets", "[", 
+        RowBox[{"positions", ",", 
+         RowBox[{"{", "2", "}"}]}], "]"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "attempt", " ", "moving", " ", "one", " ", 
+     "particle"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"moveParticle", "[", 
+      RowBox[{"particles_", ",", "boardSize_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+        "particleIndex", ",", "direction", ",", "proposedPosition", ",", 
+         "currentDistance", ",", "newDistance", ",", 
+         RowBox[{"validMove", "=", "False"}], ",", 
+         RowBox[{"newParticles", "=", "particles"}]}], "}"}], ",", 
+       RowBox[{"(*", 
+        RowBox[{"Select", " ", "a", " ", "random", " ", "particle"}], "*)"}], 
+       
+       RowBox[{
+        RowBox[{"particleIndex", "=", 
+         RowBox[{"RandomInteger", "[", 
+          RowBox[{"{", 
+           RowBox[{"1", ",", 
+            RowBox[{"Length", "[", "particles", "]"}]}], "}"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{"Select", " ", "a", " ", "random", " ", 
+          RowBox[{"direction", ":", 
+           RowBox[{"{", 
+            RowBox[{"up", ",", "down", ",", "left", ",", "right", ",", 
+             RowBox[{"up", "-", "left"}], ",", 
+             RowBox[{"up", "-", "right"}], ",", 
+             RowBox[{"down", "-", "left"}], ",", 
+             RowBox[{"down", "-", "right"}]}], "}"}]}]}], "*)"}], 
+        RowBox[{"direction", "=", 
+         RowBox[{"RandomChoice", "[", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"0", ",", "1"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", 
+              RowBox[{"-", "1"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"1", ",", "0"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "1"}], ",", "0"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "1"}], ",", "1"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"1", ",", "1"}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "1"}], ",", 
+              RowBox[{"-", "1"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"1", ",", 
+              RowBox[{"-", "1"}]}], "}"}]}], "}"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Compute", " ", "the", " ", "proposed", " ", "new", " ", 
+          "position"}], "*)"}], 
+        RowBox[{"proposedPosition", "=", 
+         RowBox[{
+          RowBox[{"particles", "[", 
+           RowBox[{"[", "particleIndex", "]"}], "]"}], "+", "direction"}]}], 
+        ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Compute", " ", "squared", " ", "distances", " ", "for", " ", 
+          "current", " ", "and", " ", "proposed", " ", "positions"}], "*)"}], 
+        
+        RowBox[{"currentDistance", "=", 
+         RowBox[{"totalSquaredDistance", "[", "particles", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"newParticles", "[", 
+          RowBox[{"[", "particleIndex", "]"}], "]"}], "=", 
+         "proposedPosition"}], ";", 
+        RowBox[{"(*", 
+         RowBox[{"Temporarily", " ", "move"}], "*)"}], 
+        RowBox[{"newDistance", "=", 
+         RowBox[{"totalSquaredDistance", "[", "newParticles", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+         "Check", " ", "if", " ", "the", " ", "move", " ", "is", " ", 
+          "valid"}], "*)"}], 
+        RowBox[{"If", "[", 
+         RowBox[{"(*", 
+          RowBox[{
+          "Within", " ", "bounds", " ", "and", " ", "no", " ", "overlap"}], 
+          "*)"}], 
+         RowBox[{
+          RowBox[{
+           RowBox[{"AllTrue", "[", 
+            RowBox[{"proposedPosition", ",", 
+             RowBox[{
+              RowBox[{"0", "<=", "#", "<", "boardSize"}], "&"}]}], "]"}], "&&", 
+           RowBox[{"!", 
+            RowBox[{"MemberQ", "[", 
+             RowBox[{
+              RowBox[{"Delete", "[", 
+               RowBox[{"newParticles", ",", "particleIndex"}], "]"}], ",", 
+              "proposedPosition"}], "]"}]}]}], ",", 
+          RowBox[{"(*", 
+           RowBox[{"Evaluate", " ", "distance", " ", "criterion"}], "*)"}], 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"newDistance", "<=", "currentDistance"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{
+             "Squared", " ", "distance", " ", "does", " ", "not", " ", 
+              "increase"}], "*)"}], 
+            RowBox[{"validMove", "=", "True"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{"Squared", " ", "distance", " ", 
+              RowBox[{"increases", ":", 
+               RowBox[{
+               "Allow", " ", "with", " ", "a", " ", "probability"}]}]}], 
+             "*)"}], 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{"RandomReal", "[", "]"}], "<=", 
+               "distanceIncreaseProbability"}], ",", 
+              RowBox[{"validMove", "=", "True"}], ",", 
+              RowBox[{"newParticles", "=", "particles"}]}], "]"}]}], "]"}], 
+          ",", 
+          RowBox[{"(*", 
+           RowBox[{
+           "Revert", " ", "the", " ", "temporary", " ", "move", " ", "if", 
+            " ", "invalid"}], "*)"}], 
+          RowBox[{"newParticles", "=", "particles"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{"newParticles", ",", "validMove"}], "}"}]}]}], " ", 
+      RowBox[{"(*", 
+       RowBox[{
+       "Return", " ", "updated", " ", "particles", " ", "and", " ", "whether",
+         " ", "the", " ", "move", " ", "succeeded"}], "*)"}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+    "Function", " ", "to", " ", "draw", " ", "the", " ", "chessboard", " ", 
+     "with", " ", "particles"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"drawBoardWithParticles", "[", "positions_", "]"}], ":=", 
+     RowBox[{"Graphics", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"(*", 
+         RowBox[{"Draw", " ", "grid"}], "*)"}], 
+        RowBox[{
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Line", "[", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"x", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"x", ",", "boardSize"}], "}"}]}], "}"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"x", ",", "0", ",", "boardSize"}], "}"}]}], "]"}], ",", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Line", "[", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"0", ",", "y"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"boardSize", ",", "y"}], "}"}]}], "}"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"y", ",", "0", ",", "boardSize"}], "}"}]}], "]"}], ",", 
+         RowBox[{"(*", 
+          RowBox[{"Draw", " ", "particles"}], "*)"}], 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"Red", ",", 
+             RowBox[{"Disk", "[", 
+              RowBox[{
+               RowBox[{"pos", "+", 
+                RowBox[{"{", 
+                 RowBox[{"0.5", ",", "0.5"}], "}"}]}], ",", "0.4"}], "]"}]}], 
+            "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"pos", ",", "positions"}], "}"}]}], "]"}]}], "}"}], ",", 
+       RowBox[{"PlotRange", "->", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"0", ",", "boardSize"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "boardSize"}], "}"}]}], "}"}]}], ",", 
+       RowBox[{"ImageSize", "->", "400"}], ",", 
+       RowBox[{"AspectRatio", "->", "1"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Real", "-", 
+     RowBox[{
+     "time", " ", "automatic", " ", "evolution", " ", "with", " ", 
+      "cleanup"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{"DynamicModule", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"particles", ",", 
+       RowBox[{"epoch", "=", "0"}], ",", 
+       RowBox[{"finished", "=", "False"}], ",", 
+       RowBox[{"validMoves", "=", "0"}], ",", 
+       RowBox[{"invalidMoves", "=", "0"}]}], "}"}], ",", 
+     RowBox[{"(*", 
+      RowBox[{
+       RowBox[{"Step", " ", "1"}], ":", 
+       RowBox[{"Initialize", " ", "particles"}]}], "*)"}], 
+     RowBox[{
+      RowBox[{"particles", "=", 
+       RowBox[{"initializeParticles", "[", 
+        RowBox[{"numParticles", ",", "boardSize"}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"(*", 
+       RowBox[{
+        RowBox[{"Step", " ", "2"}], ":", 
+        RowBox[{
+        "Dynamic", " ", "loop", " ", "for", " ", "automatic", " ", 
+         "updates"}]}], "*)"}], 
+      RowBox[{"Column", "[", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Dynamic", "[", 
+          RowBox[{
+           RowBox[{"Row", "[", 
+            RowBox[{"{", 
+             RowBox[{
+             "\"\<Epoch: \>\"", ",", "epoch", ",", "\"\< | Valid Moves: \>\"",
+               ",", "validMoves", ",", "\"\< | Invalid Moves: \>\"", ",", 
+              "invalidMoves"}], "}"}], "]"}], ",", 
+           RowBox[{"(*", 
+            RowBox[{"Display", " ", "epoch", " ", "counter"}], "*)"}], 
+           RowBox[{"TrackedSymbols", ":>", 
+            RowBox[{"{", 
+             RowBox[{"epoch", ",", "validMoves", ",", "invalidMoves"}], 
+             "}"}]}]}], " ", 
+          RowBox[{"(*", 
+           RowBox[{"Update", " ", "when", " ", "epoch", " ", "changes"}], 
+           "*)"}], "]"}], ",", 
+         RowBox[{"Dynamic", "[", 
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"epoch", "<=", "maxEpochs"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{"Animation", " ", "in", " ", "progress"}], "*)"}], 
+            RowBox[{"Refresh", "[", 
+             RowBox[{"(*", 
+              RowBox[{
+              "Attempt", " ", "to", " ", "move", " ", "a", " ", "particle"}], 
+              "*)"}], 
+             RowBox[{
+              RowBox[{
+               RowBox[{"Module", "[", 
+                RowBox[{
+                 RowBox[{"{", "result", "}"}], ",", 
+                 RowBox[{
+                  RowBox[{"result", "=", 
+                   RowBox[{"moveParticle", "[", 
+                    RowBox[{"particles", ",", "boardSize"}], "]"}]}], ";", 
+                  "\[IndentingNewLine]", 
+                  RowBox[{"particles", "=", 
+                   RowBox[{"result", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}]}], ";", 
+                  RowBox[{"(*", 
+                   RowBox[{"Update", " ", "particles"}], "*)"}], 
+                  RowBox[{"If", "[", 
+                   RowBox[{
+                    RowBox[{"result", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], ",", 
+                    RowBox[{"validMoves", "++"}], ",", 
+                    RowBox[{"invalidMoves", "++"}]}], "]"}], ";"}]}], " ", 
+                RowBox[{"(*", 
+                 RowBox[{"Track", " ", "move", " ", 
+                  RowBox[{"success", "/", "failure"}]}], "*)"}], "]"}], ";", 
+               "\[IndentingNewLine]", 
+               RowBox[{"(*", 
+                RowBox[{"Increment", " ", "epoch", " ", "counter"}], "*)"}], 
+               RowBox[{"epoch", "++"}], ";", "\[IndentingNewLine]", 
+               RowBox[{"(*", 
+                RowBox[{"Draw", " ", "the", " ", "board"}], "*)"}], 
+               RowBox[{"drawBoardWithParticles", "[", "particles", "]"}]}], 
+              ",", 
+              RowBox[{"UpdateInterval", "->", "displayUpdateInterval"}]}], 
+             " ", 
+             RowBox[{"(*", 
+              RowBox[{
+              "Use", " ", "adjustable", " ", "parameter", " ", "for", " ", 
+               "update", " ", "frequency"}], "*)"}], "]"}], ",", 
+            RowBox[{"(*", 
+             RowBox[{"Animation", " ", 
+              RowBox[{"complete", ":", 
+               RowBox[{
+               "Cleanup", " ", "and", " ", "Quit", " ", "Kernel"}]}]}], 
+             "*)"}], 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{"!", "finished"}], ",", 
+              RowBox[{
+               RowBox[{"finished", "=", "True"}], ";", "\[IndentingNewLine]", 
+               
+               RowBox[{"Pause", "[", "1", "]"}], ";", 
+               RowBox[{"(*", 
+                RowBox[{
+                "Short", " ", "delay", " ", "before", " ", "quitting"}], 
+                "*)"}], 
+               RowBox[{
+               "Print", "[", 
+                "\"\<Simulation Complete. Quitting Kernel...\>\"", "]"}], ";",
+                "\[IndentingNewLine]", 
+               RowBox[{"ClearAll", "[", "\"\<Global`*\>\"", "]"}], ";", 
+               RowBox[{"(*", 
+                RowBox[{
+                "Clear", " ", "all", " ", "global", " ", "variables"}], 
+                "*)"}], 
+               RowBox[{
+               "FrontEndTokenExecute", "[", "\"\<QuitKernel\>\"", "]"}]}]}], 
+             "]"}]}], "]"}], "]"}]}], "}"}], "]"}]}]}], "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.944161670769856*^9, 3.944161670773574*^9}, {
+   3.944161804517913*^9, 3.944161805622408*^9}, {3.944162159042136*^9, 
+   3.9441621731564913`*^9}, {3.944162523562154*^9, 3.944162523702664*^9}, {
+   3.94416269000814*^9, 3.9441627043531113`*^9}, {3.9441628726401577`*^9, 
+   3.944162873945133*^9}, {3.944163288713863*^9, 3.944163290075845*^9}, {
+   3.9441633300101357`*^9, 3.9441633301921797`*^9}, {3.944163371485944*^9, 
+   3.944163371673491*^9}, {3.9441634117920237`*^9, 3.9441634120880737`*^9}, {
+   3.9441636752474003`*^9, 3.94416367913095*^9}, {3.944164271699973*^9, 
+   3.944164273813178*^9}, {3.944164332679474*^9, 3.9441643439623947`*^9}, {
+   3.944164486677211*^9, 3.9441645077548323`*^9}, {3.944164578503862*^9, 
+   3.9441645796544724`*^9}, {3.944164641474283*^9, 3.9441646417596407`*^9}, {
+   3.944164722546026*^9, 3.94416474425035*^9}, {3.944164822198821*^9, 
+   3.9441648223929996`*^9}, {3.944164866372394*^9, 3.944164866641671*^9}, {
+   3.944165644977911*^9, 3.944165652259976*^9}, 3.944165896411563*^9},
+ CellLabel->"In[1]:=",ExpressionUUID->"f9b21d29-20d5-42cc-a964-98796f68f921"],
+
+Cell[BoxData[
+ DynamicModuleBox[{$CellContext`particles$$ = {{6, 6}, {13, 12}, {6, 7}, {8, 
+  11}, {10, 14}, {7, 6}, {12, 9}, {14, 7}, {13, 9}, {12, 12}, {7, 12}, {13, 
+  8}, {7, 15}, {8, 7}, {8, 12}, {12, 6}, {6, 14}, {12, 10}, {8, 13}, {11, 
+  7}, {12, 14}, {5, 11}, {11, 6}, {15, 10}, {14, 11}, {12, 11}, {14, 8}, {13, 
+  6}, {7, 7}, {11, 9}, {14, 14}, {9, 8}, {10, 13}, {11, 8}, {12, 15}, {7, 
+  14}, {6, 8}, {10, 8}, {11, 15}, {13, 14}, {9, 10}, {15, 14}, {10, 16}, {7, 
+  11}, {11, 14}, {8, 15}, {15, 11}, {14, 13}, {9, 13}, {7, 9}, {9, 15}, {6, 
+  10}, {11, 13}, {10, 12}, {8, 10}, {12, 8}, {14, 9}, {9, 11}, {15, 13}, {14, 
+  12}, {6, 13}, {12, 13}, {10, 6}, {10, 11}, {10, 7}, {8, 8}, {7, 13}, {8, 
+  9}, {12, 7}, {6, 12}, {9, 7}, {13, 10}, {14, 15}, {13, 13}, {11, 12}, {5, 
+  13}, {6, 9}, {9, 12}, {11, 10}, {8, 14}, {5, 14}, {15, 9}, {15, 12}, {7, 
+  10}, {9, 6}, {8, 6}, {5, 12}, {9, 14}, {10, 9}, {10, 10}, {7, 8}, {13, 7}, {
+  9, 9}, {11, 11}, {13, 11}, {6, 15}, {10, 15}, {5, 10}, {6, 11}, {14, 
+  10}}, $CellContext`epoch$$ = 6818, $CellContext`finished$$ = 
+  False, $CellContext`validMoves$$ = 522, $CellContext`invalidMoves$$ = 6296}, 
+  TagBox[GridBox[{
+     {
+      DynamicBox[ToBoxes[
+        Row[{
+         "Epoch: ", $CellContext`epoch$$, 
+          " | Valid Moves: ", $CellContext`validMoves$$, 
+          " | Invalid Moves: ", $CellContext`invalidMoves$$}], StandardForm],
+       ImageSizeCache->{507.003173828125, {3.3312500000000003`, 11.58625}},
+       TrackedSymbols:>{$CellContext`epoch$$, $CellContext`validMoves$$, \
+$CellContext`invalidMoves$$}]},
+     {
+      DynamicBox[ToBoxes[
+        If[$CellContext`epoch$$ <= $CellContext`maxEpochs, 
+         Refresh[
+         Module[{$CellContext`result$}, $CellContext`result$ = \
+$CellContext`moveParticle[$CellContext`particles$$, $CellContext`boardSize]; \
+$CellContext`particles$$ = Part[$CellContext`result$, 1]; If[
+              Part[$CellContext`result$, 2], 
+              Increment[$CellContext`validMoves$$], 
+              Increment[$CellContext`invalidMoves$$]]; Null]; 
+          Increment[$CellContext`epoch$$]; \
+$CellContext`drawBoardWithParticles[$CellContext`particles$$], 
+          UpdateInterval -> $CellContext`displayUpdateInterval], 
+         If[
+          Not[$CellContext`finished$$], $CellContext`finished$$ = True; 
+          Pause[1]; Print["Simulation Complete. Quitting Kernel..."]; 
+          ClearAll["Global`*"]; FrontEndTokenExecute["QuitKernel"]]], 
+        StandardForm],
+       ImageSizeCache->{
+        699.60634765625, {259.761962890625, 15.98989486694336}}]}
+    },
+    DefaultBaseStyle->"Column",
+    GridBoxAlignment->{"Columns" -> {{Left}}},
+    GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+   "Column"],
+  DynamicModuleValues:>{}]], "Output",
+ CellChangeTimes->{3.9446688948297377`*^9, 3.947697699268684*^9},
+ CellLabel->"Out[10]=",ExpressionUUID->"be45b7f9-03e2-461d-be99-2d924ec1d23d"]
+}, Open  ]]
+},
+WindowSize->{864, 1051},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+FrontEndVersion->"14.1 for Mac OS X ARM (64-bit) (July 16, 2024)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"a7946b08-f4fe-4aac-8d16-ec03dda64b20"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 18933, 471, 2513, "Input",ExpressionUUID->"f9b21d29-20d5-42cc-a964-98796f68f921"],
+Cell[19512, 495, 2940, 53, 318, "Output",ExpressionUUID->"be45b7f9-03e2-461d-be99-2d924ec1d23d"]
+}, Open  ]]
+}
+]
+*)
+

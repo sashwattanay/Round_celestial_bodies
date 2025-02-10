@@ -1,0 +1,103 @@
+(*Chessboard size*)boardSize = 20;
+
+(*Number of particles*)
+numParticles = 100;
+
+(*Total epochs before stopping*)
+maxEpochs = 20000;
+
+(*Adjustable parameter for update frequency*)
+(*Change displayUpdateInterval to adjust animation speed (smaller \
+value->faster updates,larger value->slower updates)*)
+displayUpdateInterval = 0.001; (*Default:0.01 seconds*)
+
+(*Probability of allowing a move when the distance increases*)
+distanceIncreaseProbability = 0.0; (*Default:0*)
+
+(*Initialize particles with unique positions*)
+initializeParticles[numParticles_, boardSize_] := 
+  Module[{allPositions, 
+    selectedPositions},(*Generate all possible positions on the \
+chessboard*)
+   allPositions = 
+    Flatten[Table[{x, y}, {x, 1, boardSize}, {y, 1, boardSize}], 1];
+   (*Randomly select numParticles unique positions*)
+   RandomSample[allPositions, numParticles] - 1 (*Adjust to 0-
+   based indexing*)];
+
+(*Function to compute cumulative squared distance*)
+totalSquaredDistance[positions_] := 
+  Total[(#[[1, 1]] - #[[2, 1]])^2 + (#[[1, 2]] - #[[2, 2]])^2 & /@ 
+    Subsets[positions, {2}]];
+
+(*Function to attempt moving one particle*)
+moveParticle[particles_, boardSize_] := 
+  Module[{particleIndex, direction, proposedPosition, currentDistance,
+     newDistance, validMove = False, 
+    newParticles = particles},(*Select a random particle*)
+   particleIndex = RandomInteger[{1, Length[particles]}];
+   (*Select a random direction:{up,down,left,right,up-left,up-right,
+   down-left,down-right}*)
+   direction = 
+    RandomChoice[{{0, 1}, {0, -1}, {1, 0}, {-1, 0}, {-1, 1}, {1, 
+       1}, {-1, -1}, {1, -1}}];
+   (*Compute the proposed new position*)
+   proposedPosition = particles[[particleIndex]] + direction;
+   (*Compute squared distances for current and proposed positions*)
+   currentDistance = totalSquaredDistance[particles];
+   newParticles[[particleIndex]] = 
+    proposedPosition;(*Temporarily move*)
+   newDistance = totalSquaredDistance[newParticles];
+   (*Check if the move is valid*)
+   If[(*Within bounds and no overlap*)
+    AllTrue[proposedPosition, 0 <= # < boardSize &] && ! 
+      MemberQ[Delete[newParticles, particleIndex], 
+       proposedPosition],(*Evaluate distance criterion*)
+    If[newDistance <= 
+      currentDistance,(*Squared distance does not increase*)
+     validMove = True,(*Squared distance increases:
+     Allow with a probability*)
+     If[RandomReal[] <= distanceIncreaseProbability, validMove = True,
+       newParticles = 
+       particles]],(*Revert the temporary move if invalid*)
+    newParticles = particles];
+   {newParticles, 
+    validMove} (*Return updated particles and whether the move \
+succeeded*)];
+
+(*Function to draw the chessboard with particles*)
+drawBoardWithParticles[positions_] := 
+  Graphics[{(*Draw grid*)
+    Table[Line[{{x, 0}, {x, boardSize}}], {x, 0, boardSize}], 
+    Table[Line[{{0, y}, {boardSize, y}}], {y, 0, 
+      boardSize}],(*Draw particles*)
+    Table[{Red, Disk[pos + {0.5, 0.5}, 0.4]}, {pos, positions}]}, 
+   PlotRange -> {{0, boardSize}, {0, boardSize}}, ImageSize -> 400, 
+   AspectRatio -> 1];
+
+(*Real-time automatic evolution with cleanup*)
+DynamicModule[{particles, epoch = 0, finished = False, validMoves = 0,
+   invalidMoves = 0},(*Step 1:Initialize particles*)
+ particles = initializeParticles[numParticles, boardSize];
+ (*Step 2:Dynamic loop for automatic updates*)
+ Column[{Dynamic[
+    Row[{"Epoch: ", epoch, " | Valid Moves: ", validMoves, 
+      " | Invalid Moves: ", invalidMoves}],(*Display epoch counter*)
+    TrackedSymbols :> {epoch, validMoves, 
+      invalidMoves} (*Update when epoch changes*)], 
+   Dynamic[If[epoch <= maxEpochs,(*Animation in progress*)
+     Refresh[(*Attempt to move a particle*)
+      Module[{result}, result = moveParticle[particles, boardSize];
+       particles = result[[1]];(*Update particles*)
+       If[result[[2]], validMoves++, 
+        invalidMoves++]; (*Track move success/failure*)];
+      (*Increment epoch counter*)epoch++;
+      (*Draw the board*)drawBoardWithParticles[particles], 
+      UpdateInterval -> 
+       displayUpdateInterval (*Use adjustable parameter for update \
+frequency*)],(*Animation complete:Cleanup and Quit Kernel*)
+     If[! finished, finished = True;
+      Pause[1];(*Short delay before quitting*)
+      Print["Simulation Complete. Quitting Kernel..."];
+      ClearAll["Global`*"];(*Clear all global variables*)
+      FrontEndTokenExecute["QuitKernel"]]]]}]]
